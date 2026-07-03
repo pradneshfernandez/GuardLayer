@@ -2,6 +2,7 @@
 .env
 CLAUDE.local.md
 .claude/settings.local.json
+.claude/handoff.md
 
 # Python
 __pycache__/
