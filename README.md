@@ -163,6 +163,39 @@ endorsed by VOYGR.
 Companion project: DevBench, which measured this hallucination problem;
 GuardLayer is the live mitigation.
 
+## Limitations
+
+- **VOYGR rate limiting is per-process, not distributed.** The token
+  bucket in `voygr/client.py` is a module-level singleton — it enforces
+  `VOYGR_RATE_LIMIT_RPM` correctly for one running instance, but running
+  multiple GuardLayer replicas gives each one its own independent budget
+  instead of a shared one.
+- **No rate limiting on the extraction path.** `voygr/client.py` throttles
+  calls to VOYGR; `extraction/extractor.py` has no equivalent limiter on
+  calls to the Anthropic API. A large `/guard/batch` request can fan out an
+  unbounded burst of concurrent Anthropic calls.
+- **The Postgres write is on the request's critical path.** `pipeline/guard.py`
+  awaits `storage.postgres.write_verification()` directly rather than firing
+  it in the background. A failed write is swallowed (per the graceful-
+  degradation design), but a *slow* — not down — Postgres adds real latency
+  to every `/guard` call.
+- **No authentication on GuardLayer's own API.** `/guard`, `/guard/batch`,
+  `/stats`, and `/history` have no API key, token, or auth dependency —
+  anyone with network access to the service can call them.
+- **`/history` uses offset-based pagination**, which is simple but doesn't
+  scale past a large `verification_log` table (each page still scans past
+  the offset).
+- **Never exercised against a live, successful VOYGR or Anthropic response**
+  in this environment — see "What's yet to be done" above. The test suite
+  covers both APIs thoroughly via fixtures and mocks, and the graceful-
+  degradation paths are verified against real 401s, but a genuine
+  `FATAL_FLAW` verdict from a live VOYGR call has not been observed.
+- **Confidence scoring is five fixed buckets**, not a continuous score —
+  it maps directly off VOYGR's `existence_status`/`open_closed_status`
+  pair. It can't distinguish, for example, "temporarily closed for
+  renovation" from "permanently closed," because VOYGR's own response
+  schema doesn't currently expose that distinction either.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
