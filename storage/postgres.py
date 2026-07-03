@@ -118,6 +118,10 @@ async def get_stats() -> dict:
     }
 
 
+async def is_available() -> bool:
+    return await _get_pool() is not None
+
+
 async def close() -> None:
     global _pool
     if _pool is not None:

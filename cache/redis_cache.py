@@ -96,6 +96,11 @@ async def stats() -> dict[str, int | float | bool]:
     }
 
 
+async def init() -> None:
+    """Eagerly establish (and ping) the Redis connection pool."""
+    await _get_connection()
+
+
 async def close() -> None:
     global _pool
     if _pool is not None:
