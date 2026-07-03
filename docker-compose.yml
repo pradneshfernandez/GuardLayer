@@ -31,6 +31,9 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379
     depends_on:
       postgres:
         condition: service_healthy

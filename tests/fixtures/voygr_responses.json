@@ -1,0 +1,26 @@
+{
+  "open_business": {
+    "existence_status": "exists",
+    "open_closed_status": "open",
+    "request_id": "req_open_1",
+    "validation_timestamp": "2026-01-01T00:00:00Z"
+  },
+  "closed_business": {
+    "existence_status": "exists",
+    "open_closed_status": "closed",
+    "request_id": "req_closed_1",
+    "validation_timestamp": "2026-01-01T00:00:00Z"
+  },
+  "not_exists": {
+    "existence_status": "not_exists",
+    "open_closed_status": "uncertain",
+    "request_id": "req_notexists_1",
+    "validation_timestamp": "2026-01-01T00:00:00Z"
+  },
+  "rate_limited": {
+    "error": {"type": "rate_limit_error", "message": "Too many requests"}
+  },
+  "unauthorized": {
+    "error": {"type": "authentication_error", "message": "Invalid API key"}
+  }
+}
