@@ -55,7 +55,7 @@ concurrently — do not verify sequentially.
 All cross-module data **must** be Pydantic models. No raw dicts between modules.
 
 The confidence threshold for `needs_enrichment: true` is **configurable via env**
-(`CONFIDENCE_THRESHOLD`, default 70). Do not hardcode 70 anywhere in source.
+(`CONFIDENCE_THRESHOLD`, default 0.70). Do not hardcode 0.70 anywhere in source.
 
 ## Environment
 
@@ -67,7 +67,7 @@ VOYGR_API_KEY              Required for live verification — blank = uncertain 
 VOYGR_API_BASE_URL         https://dev.voygr.tech
 POSTGRES_HOST/PORT/DB/USER/PASSWORD
 REDIS_URL                  redis://localhost:6379
-CONFIDENCE_THRESHOLD       Default 70 — below this flags needs_enrichment: true
+CONFIDENCE_THRESHOLD       Default 0.70 (0.0-1.0) — below this flags needs_enrichment: true
 VOYGR_RATE_LIMIT_RPM       Default 10 — free tier limit
 ```
 
