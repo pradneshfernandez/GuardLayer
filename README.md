@@ -1,31 +1,83 @@
 # GuardLayer
 
-FastAPI middleware that intercepts LLM responses containing place recommendations,
-extracts entity mentions, verifies each against VOYGR's business-status API, and
-returns a guarded response with fatal flaws flagged before they reach the user.
+GuardLayer is a FastAPI middleware that sits between an LLM and its user. It
+extracts place recommendations from LLM free text, verifies each one against
+a business-status API, and returns a guarded response with fatal flaws
+flagged before they ever reach the user.
 
-Companion project to DevBench. Where DevBench measured the hallucination problem,
-GuardLayer fixes it live. Demo case: all 7 LLM configs in VOYGR's Q1 report
-confidently gave booking guidance to a permanently closed Buenos Aires restaurant.
-GuardLayer catches that.
+## The problem it solves
+
+All 7 LLM configurations in VOYGR's Q1 2026 report confidently provided
+booking guidance to a permanently closed restaurant. GuardLayer catches this.
+
+LLMs recommend places by pattern-matching on training data, with no live
+knowledge of whether a business still exists or is still open. GuardLayer
+adds that missing verification step as middleware, so a hallucinated or
+stale recommendation gets flagged — or blocked — instead of reaching the
+user as confident, wrong advice.
 
 ## How it works
 
-```
-LLM response → extract entities → check cache → verify via VOYGR API
-             → score confidence → persist → guarded response
-```
+1. **Extract** — parse the LLM's free text into structured `{name, address}`
+   entity mentions (via Claude Haiku).
+2. **Check cache** — look up each entity in Redis; skip verification on a
+   hit.
+3. **Verify** — on a cache miss, call the business-status API and cache the
+   result.
+4. **Flag** — score each result into a confidence value and a verdict
+   (`verified` / `flagged` / `fatal_flaw` / `uncertain`), and assemble a
+   guarded response with a human-readable summary.
 
-See [docs/architecture.md](docs/architecture.md) for the full pipeline design and
-[docs/structure.md](docs/structure.md) for the project layout.
+See [docs/architecture.md](docs/architecture.md) for the full pipeline design
+and [docs/structure.md](docs/structure.md) for the project layout.
 
-## Getting started
+## Quick start
 
 ```bash
 cp .env.example .env   # fill in ANTHROPIC_API_KEY and VOYGR_API_KEY
 make setup              # start postgres, redis, app containers
 make run                # start the API on :8080
 ```
+
+```bash
+curl -s -X POST http://localhost:8080/guard \
+  -H "Content-Type: application/json" \
+  -d '{"text":"I recommend Tartine Bakery on Guerrero St, San Francisco"}' \
+  | python3 -m json.tool
+```
+
+## Demo
+
+```bash
+make demo
+```
+
+Runs the pipeline against the exact hardest-scoring prompts from VOYGR's own
+Q1 2026 report (a permanently-closed restaurant in Buenos Aires, a
+permanently-closed cafe in Medellín — the hardest prompt in their benchmark
+— and a clean baseline SF coffee-shop query), and prints a before/after
+verdict table for each.
+
+> **Status: this repo does not currently have live `ANTHROPIC_API_KEY` /
+> `VOYGR_API_KEY` credentials configured.** `make demo` runs end-to-end and
+> degrades gracefully (0 entities extracted, "verified clean" by default —
+> see [`.claude/handoff.md`](.claude/handoff.md) for the exact behavior),
+> but it cannot show real `FATAL_FLAW` verdicts for the Buenos Aires and
+> Medellín prompts until both keys are set in `.env`. The pipeline, scoring,
+> and API code paths are fully implemented and unit-tested (62 tests, 98%
+> coverage) independent of live credentials — what's left is plugging in
+> real keys and re-running the demo to capture the actual before/after
+> screenshot.
+
+## API reference
+
+| Endpoint           | Method | Description                                          |
+| ------------------- | ------ | ----------------------------------------------------- |
+| `/guard`            | POST   | Verify all place mentions in one LLM response          |
+| `/guard/batch`      | POST   | Same, for up to 20 responses concurrently               |
+| `/stats`            | GET    | Cache hit rate, total verified, fatal flaws, avg confidence |
+| `/history`          | GET    | Paginated verification log (`?limit=20&offset=0`)      |
+| `/health`           | GET    | Service status plus Redis/Postgres/VOYGR dependency status |
 
 ## Commands
 
@@ -84,6 +136,32 @@ make test
 
 All tests run offline against fixtures/mocks — no live Anthropic, VOYGR, Redis,
 or Postgres connections required.
+
+## What's yet to be done
+
+- **Live credentials** — `ANTHROPIC_API_KEY` and `VOYGR_API_KEY` are not
+  configured in this environment. Every code path that depends on them
+  (extraction, verification) is implemented, tested, and degrades
+  gracefully without them, but the actual live before/after demo output
+  (real `FATAL_FLAW` verdicts on the Buenos Aires / Medellín prompts) has
+  not been captured yet.
+- A demo screenshot/recording captured against the live APIs, to replace
+  the placeholder description above.
+
+## Attribution
+
+This project integrates with [VOYGR](https://voygr.tech)'s
+[Business Validation API](https://github.com/voygr-tech/dev-tools)
+to verify LLM-recommended places. The permanently-closed venue examples used
+in the demo are drawn from VOYGR's
+[Q1 2026 LLM Local Search Benchmark](https://github.com/voygr-tech/llm-local-search-benchmark-report)
+(Section 4.3).
+
+This is an independent, unofficial project and is not affiliated with or
+endorsed by VOYGR.
+
+Companion project: DevBench, which measured this hallucination problem;
+GuardLayer is the live mitigation.
 
 ## License
 

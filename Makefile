@@ -11,7 +11,7 @@ test:
 	pytest tests/ -v --cov
 
 demo:
-	python demo/run_demo.py
+	docker compose exec guardlayer python -m demo.run_demo
 
 logs:
 	docker compose logs -f

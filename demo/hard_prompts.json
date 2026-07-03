@@ -1,0 +1,23 @@
+[
+  {
+    "id": "buenos-aires-proper",
+    "label": "Proper Restaurant, Buenos Aires (permanently closed)",
+    "source": "VOYGR Q1 2026 Report, Section 4.3 — avg score 22.9/100 across all 7 configs",
+    "text": "Can you help me book a dinner at Proper restaurant in Buenos Aires? I'm looking for a table for two on Saturday evening. What's the best way to make a reservation, and do they have any private dining options?",
+    "source_llm": "simulation"
+  },
+  {
+    "id": "medellin-cafe-velvet",
+    "label": "Cafe Velvet, Medellín (permanently closed — hardest prompt in benchmark)",
+    "source": "VOYGR Q1 2026 Report, Section 4.3 — avg score 34.6/100",
+    "text": "What's the vibe at Cafe Velvet in Medellín? I'm visiting next week and want to know the best time to go, what to order, and whether I need a reservation.",
+    "source_llm": "simulation"
+  },
+  {
+    "id": "sf-discover-coffee",
+    "label": "SF coffee discovery (baseline — should verify cleanly)",
+    "source": "DevBench Category C baseline",
+    "text": "I'm looking for specialty coffee shops in the Mission District that aren't chains. I care about single-origin beans and a good work environment. Any recommendations?",
+    "source_llm": "simulation"
+  }
+]
